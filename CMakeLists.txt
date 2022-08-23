@@ -171,6 +171,19 @@ if(BUILD_EXAMPLES)
             RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
         )
 
+	#### Video Example Bracketing
+	set(VIDEO_EXAMPLE_BRACKETING ${PROJECT_NAME}_video_example_bracketing)
+	add_executable(${VIDEO_EXAMPLE_BRACKETING} "${PROJECT_SOURCE_DIR}/examples/zed_oc_video_example_bracketing.cpp")
+	set_target_properties(${VIDEO_EXAMPLE_BRACKETING} PROPERTIES PREFIX "")
+	set_property(TARGET ${VIDEO_EXAMPLE_BRACKETING} PROPERTY POSITION_INDEPENDENT_CODE ON)
+	target_link_libraries(${VIDEO_EXAMPLE_BRACKETING}
+          ${PROJECT_NAME}
+          ${OpenCV_LIBS}
+        )
+install(TARGETS ${VIDEO_EXAMPLE_BRACKETING}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+        )
+
         ##### Control Example
         set(CONTROL_EXAMPLE ${PROJECT_NAME}_control_example)
         add_executable(${CONTROL_EXAMPLE} "${PROJECT_SOURCE_DIR}/examples/zed_oc_control_example.cpp")
