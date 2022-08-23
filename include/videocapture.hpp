@@ -399,6 +399,7 @@ private:
     int ll_write_system_register(uint64_t address, uint8_t value);
     int ll_read_sensor_register(int side, int sscb_id, uint64_t address, uint8_t *value);
     int ll_write_sensor_register(int side, int sscb_id, uint64_t address, uint8_t value);
+    int ll_write_sensor_register_modified(int side, int sscb_id, uint64_t address, uint8_t value); ////// OG //////
 
     int ll_SPI_FlashProgramRead(uint8_t *pBuf, int Adr, int len, bool force=false);
 

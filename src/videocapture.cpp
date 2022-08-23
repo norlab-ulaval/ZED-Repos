@@ -1247,6 +1247,57 @@ int VideoCapture::ll_write_sensor_register(int side, int sscb_id, uint64_t addre
     return hr;
 }
 
+int VideoCapture::ll_write_sensor_register_modified(int side, int sscb_id, uint64_t address, uint8_t value) ////// OG //////
+{
+
+    unsigned char xu_buf[384];
+    memset(xu_buf, 0, 384);
+
+    //Set xubuf
+    xu_buf[0] = XU_TASK_SET;
+
+    xu_buf[1] = ASIC_INT_NULL_I2C;
+    xu_buf[2] = 0x6c;
+    xu_buf[3] = sscb_id + 1; //Address width in bytes
+    xu_buf[4] = 0x01; //data width in bytes
+
+    xu_buf[5] = ((address) >> 24) & 0xff;
+    xu_buf[6] = ((address) >> 16) & 0xff;
+    xu_buf[7] = ((address) >> 8) & 0xff;
+    xu_buf[8] = (address) & 0xff;
+    xu_buf[9] = 0x00;
+    xu_buf[10] = 0x01;
+    xu_buf[11] = 0x00;
+    xu_buf[12] = 0x01;
+    xu_buf[16] = value;
+
+
+    xu_buf[9] = 0x00;
+    xu_buf[10] = 0x01;
+    xu_buf[11] = 0x00;
+    xu_buf[12] = 0x01;
+
+    int limit = 1;
+    xu_buf[9] = (limit >> 8) & 0xff;
+    xu_buf[10] = (limit >> 0) & 0xff;
+
+    //set page addr
+    xu_buf[9] = xu_buf[9] & 0x0f;
+    xu_buf[9] = xu_buf[9] | 0x10;
+    xu_buf[9] = xu_buf[9] | 0x80;
+    memcpy(&xu_buf[16], &value, sizeof (uint8_t));
+
+    int hr = ll_VendorControl(xu_buf, 384, 0);
+
+    // *********************** JM ***********************
+    xu_buf[1] = ASIC_INT_I2C;
+    memcpy(&xu_buf[16], &value, sizeof (uint8_t));
+    hr = ll_VendorControl(xu_buf, 384, 0);
+    // **************************************************
+
+    return hr;
+}
+
 int VideoCapture::ll_SPI_FlashProgramRead(uint8_t *pBuf, int Adr, int len, bool force) {
 
     int hr = -1;
@@ -1342,9 +1393,9 @@ int VideoCapture::ll_isp_get_gain(uint8_t *val, uint8_t sensorID) {
 int VideoCapture::ll_isp_set_gain(unsigned char ucGainH, unsigned char ucGainM, unsigned char ucGainL, int sensorID)
 {
     int hr = 0;
-    hr += ll_write_sensor_register(sensorID, 1, ADDR_GAIN_H, ucGainH);
-    hr += ll_write_sensor_register(sensorID, 1, ADDR_GAIN_M, ucGainM);
-    hr += ll_write_sensor_register(sensorID, 1, ADDR_GAIN_L, ucGainL);
+    hr += ll_write_sensor_register_modified(sensorID, 1, ADDR_GAIN_H, ucGainH);
+    hr += ll_write_sensor_register_modified(sensorID, 1, ADDR_GAIN_M, ucGainM);
+    hr += ll_write_sensor_register_modified(sensorID, 1, ADDR_GAIN_L, ucGainL);
     return hr;
 }
 
@@ -1371,9 +1422,9 @@ int VideoCapture::ll_isp_get_exposure(unsigned char *val, unsigned char sensorID
 int VideoCapture::ll_isp_set_exposure(unsigned char ucExpH, unsigned char ucExpM, unsigned char ucExpL, int sensorID)
 {
     int hr = 0;
-    hr += ll_write_sensor_register(sensorID, 1, ADDR_EXP_H, ucExpH);
-    hr += ll_write_sensor_register(sensorID, 1, ADDR_EXP_M, ucExpM);
-    hr += ll_write_sensor_register(sensorID, 1, ADDR_EXP_L, ucExpL);
+    hr += ll_write_sensor_register_modified(sensorID, 1, ADDR_EXP_H, ucExpH);
+    hr += ll_write_sensor_register_modified(sensorID, 1, ADDR_EXP_M, ucExpM);
+    hr += ll_write_sensor_register_modified(sensorID, 1, ADDR_EXP_L, ucExpL);
     return hr;
 }
 
@@ -1387,14 +1438,14 @@ void VideoCapture::ll_activate_sync()
     {
         sync_val_left = sync_val_left | 0x80;
 
-        ll_write_sensor_register(0, 1, 0x3002, sync_val_left);
+        ll_write_sensor_register_modified(0, 1, 0x3002, sync_val_left);
     }
 
     if (ll_read_sensor_register(1, 1, 0x3002, &sync_val_right) == 0)
     {
         sync_val_right = sync_val_right | 0x80;
 
-        ll_write_sensor_register(1, 1, 0x3002, sync_val_right);
+        ll_write_sensor_register_modified(1, 1, 0x3002, sync_val_right);
     }
 }
 
@@ -2133,10 +2184,10 @@ void VideoCapture::saveLogDataRight()
 bool VideoCapture::resetAGCAECregisters() {
     int res = 0;
 
-    res += ll_write_sensor_register( 0, 1, 0x3503, 0x04);
-    res += ll_write_sensor_register( 1, 1, 0x3503, 0x04);
-    res += ll_write_sensor_register( 0, 1, 0x3505, 0x00);
-    res += ll_write_sensor_register( 1, 1, 0x3505, 0x00);
+    res += ll_write_sensor_register_modified( 0, 1, 0x3503, 0x04);
+    res += ll_write_sensor_register_modified( 1, 1, 0x3503, 0x04);
+    res += ll_write_sensor_register_modified( 0, 1, 0x3505, 0x00);
+    res += ll_write_sensor_register_modified( 1, 1, 0x3505, 0x00);
 
     return res==0;
 }
