@@ -34,7 +34,6 @@
 // ************* JM ***************
 int stride = 1;     // Number of frames to skip between exposure changes
 std::array<int, 5> exposures {0, 10, 20, 30, 40};
-std::array<cv::Mat, 300> images;
 std::string resolution = "HD1080";
 int framerate = 30;
 // ********************************
@@ -89,7 +88,7 @@ int main(int argc, char *argv[])
     {
         params.fps = sl_oc::video::FPS::FPS_100;
     }
-    cv::VideoWriter video_writer("out_bracketing.avi", cv::VideoWriter::fourcc('M','J','P','G'), framerate, cv::Size(2*width,height));
+    //cv::VideoWriter video_writer("out_bracketing.avi", cv::VideoWriter::fourcc('M','J','P','G'), framerate, cv::Size(2*width,height));
     // **************************************************************************
     
     sl_oc::video::VideoCapture cap(params);
@@ -113,8 +112,9 @@ int main(int argc, char *argv[])
 #endif
 
     // Infinite video grabbing loop
-    // while(1)
-    for (int i = 0; i < images.size(); i)
+    //for (int i = 0; i < images.size(); i)
+    int i = 0;
+    while(1)
     {
         // Get last available frame
         const sl_oc::video::Frame frame = cap.getLastFrame();
@@ -155,8 +155,10 @@ int main(int argc, char *argv[])
 
             // Show frame
             sl_oc::tools::showImage( "Stream RGB", frameBGR, params.res  );
-
-            images[i] = frameBGR;      // **************** JM *****************
+	
+	    //std::cout << "/image_left/left_"+ std::to_string(i) +".png" << std::endl;
+	    cv::imwrite("/media/snowxavier/norlab_olivier/zed_xavier_agx/data/images/image_"+ std::to_string(i) +".bmp", frameBGR);
+            //images[i] = frameBGR;      // **************** JM *****************
             i++;
         }
         // <---- If the frame is valid we can display it
@@ -168,10 +170,10 @@ int main(int argc, char *argv[])
         // <---- Keyboard handling
     }
 
-    for (cv::Mat image: images)
-    {
-        video_writer.write(image);
-    } 
+    //for (cv::Mat image: images)
+    //{
+    //    video_writer.write(image);
+    //} 
 
     return EXIT_SUCCESS;
 }
