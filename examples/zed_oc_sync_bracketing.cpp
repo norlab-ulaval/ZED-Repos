@@ -39,9 +39,9 @@
 // ************* JM ***************
 int stride = 1;     // Number of frames to skip between exposure changes
 std::array<int, 4> exposures {10, 20, 30, 40};
-std::string resolution = "HD720";
-int framerate = 30;
-std::string save_path = "/media/snowxavier/norlab_olivier/zed_xavier_agx/data/";
+std::string resolution = "VGA";
+int framerate = 15;
+std::string save_path = "/home/snowxavier/Documents/ZED_data/";
 // ********************************
 
 
@@ -49,6 +49,7 @@ std::string save_path = "/media/snowxavier/norlab_olivier/zed_xavier_agx/data/";
 // Sensor acquisition runs at 400Hz, so it must be executed in a different thread
 void getSensorThreadFunc(sl_oc::sensors::SensorCapture* sensCap);
 void getVideoThreadFunc(sl_oc::video::VideoCapture* videoCap, sl_oc::video::RESOLUTION resolution);
+void saveVideoThreadFunc(std::string time);
 // <---- Functions
 
 // ----> Global variables
@@ -61,6 +62,7 @@ std::queue<cv::Mat> imageQueue;
 
 bool sensThreadStop=false;
 bool videoThreadStop=false;
+bool saveThreadStop=false;
 uint64_t mcu_sync_ts=0;
 
 // <---- Global variables
@@ -171,51 +173,42 @@ int main(int argc, char *argv[])
     std::vector<std::thread> threads;
     threads.push_back(std::thread(getVideoThreadFunc, &videoCap, params.res));
     threads.push_back(std::thread(getSensorThreadFunc, &sensCap));
+    threads.push_back(std::thread(saveVideoThreadFunc, time));
 
     //cv::namedWindow("Stream RGB", cv::WINDOW_AUTOSIZE);
 
     for(auto& thread : threads){
-        thread.detach();
+        thread.join();
     }
+    return 0;
 
     // Infinite grabbing loop
-    int i = 0;
-    while (1)
-    {
-        imageMutex.lock();
-        if(!imageQueue.empty())
-        {
-            cv::imwrite(save_path + time + "/images/image_"+  std::to_string(i) + ".png", imageQueue.front());
-            // Display image
-            cv::imshow( "Stream RGB", imageQueue.front());
-            imageQueue.pop();
-            i++;
-        }
-        imageMutex.unlock();
-        
+    //while (1)
+    //{
 
         // <---- Display frame with info
 
         // ----> Keyboard handling
-        int key = cv::waitKey(1);
+        //int key = cv::waitKey(1);
 
-        if(key != -1)
-        {
+        //if(key != -1)
+        //{
             // Quit
-            if(key=='q' || key=='Q'|| key==27)
-            {
-                sensThreadStop=true;
-                videoThreadStop=true;
-                for(auto& thread : threads){
-                    thread.join();
-                }
-                break;
-            }
-        }
+          //  if(key=='q' || key=='Q'|| key==27)
+           // {
+            //    sensThreadStop=true;
+             //   videoThreadStop=true;
+	//	saveThreadStop=true;
+          //      for(auto& thread : threads){
+            //        thread.join();
+              //  }
+             //   break;
+         ///   }
+       // }
         // <---- Keyboard handling
-    }
+    //}
 
-    return EXIT_SUCCESS;
+    //return EXIT_SUCCESS;
 }
 
 // Sensor acquisition runs at 400Hz, so it must be executed in a different thread
@@ -271,6 +264,27 @@ void getSensorThreadFunc(sl_oc::sensors::SensorCapture* sensCap)
 }
 
 
+void saveVideoThreadFunc(std::string time)
+{
+	// Flag to stop the thread
+        saveThreadStop = false;
+	int i = 0;
+	while(!saveThreadStop)
+	{
+
+		imageMutex.lock();
+        	if(!imageQueue.empty())
+        	{
+			std::cout << "Saving image: "+ std::to_string(i) << std::endl;
+			cv::imwrite(save_path + time + "/images/image_"+  std::to_string(i) + ".png", imageQueue.front());
+            		// Display image
+	    		// cv::imshow( "Stream RGB", imageQueue.front());
+            		imageQueue.pop();
+            		i++;
+        	}
+        	imageMutex.unlock();
+	}
+}
 void getVideoThreadFunc(sl_oc::video::VideoCapture* videoCap, sl_oc::video::RESOLUTION resolution)
 {
     // Flag to stop the thread
@@ -319,6 +333,8 @@ void getVideoThreadFunc(sl_oc::video::VideoCapture* videoCap, sl_oc::video::RESO
         std::stringstream videoTs;
         if(frame.data!=nullptr && frame.timestamp!=last_timestamp)
         {
+
+		std::cout << "Capturing image: "+ std::to_string(i) << std::endl;
 	        if (i%stride == 0) {
             // ************* JM ***************
                 int exposure = exposures[(i/stride) % exposures.size()];
@@ -333,65 +349,15 @@ void getVideoThreadFunc(sl_oc::video::VideoCapture* videoCap, sl_oc::video::RESO
             cv::Mat frameYUV( frame.height, frame.width, CV_8UC2, frame.data);
             cv::cvtColor(frameYUV,frameBGR, cv::COLOR_YUV2BGR_YUYV);
             // <---- Conversion from YUV 4:2:2 to BGR for visualization
-        }
-        // <---- Get Video frame
-
-        // ----> Video Debug information
-        videoTs << std::fixed << std::setprecision(9) << "Video timestamp: " << static_cast<double>(last_timestamp)/1e9<< " sec" ;
-        if( last_timestamp!=0 )
-            videoTs << std::fixed << std::setprecision(1)  << " [" << frame_fps << " Hz]";
-        // <---- Video Debug information
-
-        // ----> Display frame with info
-        if(frame.data!=nullptr)
-        {
-            frameData.setTo(0);
-
-            // Video info
-            cv::putText( frameData, videoTs.str(), cv::Point(10,20),cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(241,240,236));
-
-            // IMU info
-            imuMutex.lock();
-            cv::putText( frameData, imuTsStr, cv::Point(10, 35),cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(241,240,236));
-
-            // Timestamp offset info
-            std::stringstream offsetStr;
-            double offset = (static_cast<double>(frame.timestamp)-static_cast<double>(mcu_sync_ts))/1e9;
-            offsetStr << std::fixed << std::setprecision(9) << std::showpos << "Timestamp offset: " << offset << " sec [video-sensors]";
-            cv::putText( frameData, offsetStr.str().c_str(), cv::Point(10, 50),cv::FONT_HERSHEY_SIMPLEX, 0.35, cv::Scalar(241,240,236));
-
-            // Average timestamp offset info (we wait at least 200 frames to be sure that offset is stable)
-            if( frame.frame_id>200 )
-            {
-                static double sum=0;
-                static int count=0;
-
-                sum += offset;
-                double avg_offset=sum/(++count);
-
-                std::stringstream avgOffsetStr;
-                avgOffsetStr << std::fixed << std::setprecision(9) << std::showpos << "Avg timestamp offset: " << avg_offset << " sec";
-                cv::putText( frameData, avgOffsetStr.str().c_str(), cv::Point(10,62),cv::FONT_HERSHEY_SIMPLEX,0.35, cv::Scalar(241, 240,236));
-            }
-
-            // IMU values
-            cv::putText( frameData, "Inertial sensor data:", cv::Point(display_resolution.width/2,20),cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(241, 240,236));
-            cv::putText( frameData, imuAccelStr, cv::Point(display_resolution.width/2+15,42),cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(241, 240,236));
-            cv::putText( frameData, imuGyroStr, cv::Point(display_resolution.width/2+15, 62),cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(241, 240,236));
-            imuMutex.unlock();
-
-            // Resize Image for display
-            cv::resize(frameBGR, frameBGRDisplay, display_resolution);
-            
 	    
-	        // RECORDING
+	    std::cout << std::to_string(frame_fps) << std::endl;
+
+	    // RECORDING
             imageMutex.lock();
             imageQueue.push(frameBGR);
             imageMutex.unlock();
-
-            std::cout << std::to_string(frame_fps) << std::endl;
-
-            i++;
+	    i++;
         }
+        // <---- Get Video frame
     }
 }
