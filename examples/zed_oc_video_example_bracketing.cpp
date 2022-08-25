@@ -32,11 +32,11 @@
 
 
 // ************* JM ***************
-int stride = 5;     // Number of frames to skip between exposure changes
+int stride = 1;     // Number of frames to skip between exposure changes
 std::array<int, 5> exposures {0, 10, 20, 30, 40};
 std::array<cv::Mat, 300> images;
-std::string resolution = "HD1080";
-int framerate = 30;
+std::string resolution = "HD2K";
+int framerate = 15;
 // ********************************
 
 // The main function
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
         params.res = sl_oc::video::RESOLUTION::HD1080;
         width = 1920;
         height = 1080;
-    } else if (resolution == "2K") // 15FPS
+    } else if (resolution == "HD2K") // 15FPS
     {
         params.res = sl_oc::video::RESOLUTION::HD2K;
         width = 2208;
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
     }
     cv::VideoWriter video_writer("out_bracketing.avi", cv::VideoWriter::fourcc('M','J','P','G'), framerate, cv::Size(2*width,height));
     // **************************************************************************
-    
+
     sl_oc::video::VideoCapture cap(params);
     if( !cap.initializeVideo() )
     {
