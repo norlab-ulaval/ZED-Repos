@@ -171,7 +171,7 @@ if(BUILD_EXAMPLES)
             RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
         )
 
-	#### Video Example Bracketing
+	##### Video Example Bracketing
 	set(VIDEO_EXAMPLE_BRACKETING ${PROJECT_NAME}_video_example_bracketing)
 	add_executable(${VIDEO_EXAMPLE_BRACKETING} "${PROJECT_SOURCE_DIR}/examples/zed_oc_video_example_bracketing.cpp")
 	set_target_properties(${VIDEO_EXAMPLE_BRACKETING} PROPERTIES PREFIX "")
@@ -183,6 +183,20 @@ if(BUILD_EXAMPLES)
 install(TARGETS ${VIDEO_EXAMPLE_BRACKETING}
             RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
         )
+
+	### Save image Example Bracketing
+	set(IMAGE_EXAMPLE_BRACKETING ${PROJECT_NAME}_image_example_bracketing)
+	add_executable(${IMAGE_EXAMPLE_BRACKETING} "${PROJECT_SOURCE_DIR}/examples/zed_oc_image_bracketing.cpp")
+	set_target_properties(${IMAGE_EXAMPLE_BRACKETING} PROPERTIES PREFIX "")
+	set_property(TARGET ${IMAGE_EXAMPLE_BRACKETING} PROPERTY POSITION_INDEPENDENT_CODE ON)
+	target_link_libraries(${IMAGE_EXAMPLE_BRACKETING}
+          ${PROJECT_NAME}
+          ${OpenCV_LIBS}
+        )
+install(TARGETS ${IMAGE_EXAMPLE_BRACKETING}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+        )
+	
 
         ##### Control Example
         set(CONTROL_EXAMPLE ${PROJECT_NAME}_control_example)
@@ -276,7 +290,7 @@ install(TARGETS ${VIDEO_EXAMPLE_BRACKETING}
     if(BUILD_VIDEO AND BUILD_SENSORS)
         message("* Video/Sensors sync example available")
 
-        ##### Synchronization Example
+        ###### Synchronization Example
         add_executable(${PROJECT_NAME}_sync_example "${PROJECT_SOURCE_DIR}/examples/zed_oc_sync_example.cpp")
         set_target_properties(${PROJECT_NAME}_sync_example PROPERTIES PREFIX "")
         target_link_libraries(${PROJECT_NAME}_sync_example          
@@ -285,6 +299,18 @@ install(TARGETS ${VIDEO_EXAMPLE_BRACKETING}
           ${OpenCV_LIBS}
         )
         install(TARGETS ${PROJECT_NAME}_sync_example
+            RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+        )
+
+	#### Synchronization Example bracketing
+        add_executable(${PROJECT_NAME}_sync_bracketing "${PROJECT_SOURCE_DIR}/examples/zed_oc_sync_bracketing.cpp")
+        set_target_properties(${PROJECT_NAME}_sync_bracketing PROPERTIES PREFIX "")
+        target_link_libraries(${PROJECT_NAME}_sync_bracketing          
+          ${PROJECT_NAME}
+          ${PROJECT_NAME}
+          ${OpenCV_LIBS}
+        )
+        install(TARGETS ${PROJECT_NAME}_sync_bracketing
             RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
         )
     endif()
