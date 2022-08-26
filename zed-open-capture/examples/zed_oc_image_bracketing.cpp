@@ -28,14 +28,14 @@
 #include <opencv2/opencv.hpp>
 // <---- Includes
 
-// #define TEST_FPS 1
+#define TEST_FPS 1
 
 
 // ************* JM ***************
 int stride = 1;     // Number of frames to skip between exposure changes
-std::array<int, 5> exposures {0, 10, 20, 30, 40};
-std::string resolution = "HD1080";
-int framerate = 30;
+std::array<int, 4> exposures {10, 20, 40, 80};
+std::string resolution = "HD720";
+int framerate = 15;
 // ********************************
 
 // The main function
@@ -154,10 +154,10 @@ int main(int argc, char *argv[])
             // <---- Conversion from YUV 4:2:2 to BGR for visualization
 
             // Show frame
-            sl_oc::tools::showImage( "Stream RGB", frameBGR, params.res  );
+            // sl_oc::tools::showImage( "Stream RGB", frameBGR, params.res  );
 	
 	    //std::cout << "/image_left/left_"+ std::to_string(i) +".png" << std::endl;
-	    cv::imwrite("/media/snowxavier/norlab_olivier/zed_xavier_agx/data/images/image_"+ std::to_string(i) +".bmp", frameBGR);
+	    cv::imwrite("/home/alienware/Documents/ZED_data/data/images/image_"+ std::to_string(i) +".png", frameBGR);
             //images[i] = frameBGR;      // **************** JM *****************
             i++;
         }

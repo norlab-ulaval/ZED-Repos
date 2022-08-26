@@ -38,16 +38,16 @@
 
 // ************* JM ***************
 int stride = 1;     // Number of frames to skip between exposure changes
-std::array<int, 4> exposures {10, 20, 30, 40};
-std::string resolution = "VGA";
+std::array<int, 4> exposures {10, 20, 40, 80};
+std::string resolution = "HD720";
 int framerate = 15;
-std::string save_path = "/home/snowxavier/Documents/ZED_data/";
+std::string save_path = "/home/alienware/Documents/ZED_data/";
 // ********************************
 
 
 // ----> Functions
 // Sensor acquisition runs at 400Hz, so it must be executed in a different thread
-void getSensorThreadFunc(sl_oc::sensors::SensorCapture* sensCap);
+// void getSensorThreadFunc(sl_oc::sensors::SensorCapture* sensCap);
 void getVideoThreadFunc(sl_oc::video::VideoCapture* videoCap, sl_oc::video::RESOLUTION resolution);
 void saveVideoThreadFunc(std::string time);
 // <---- Functions
@@ -55,12 +55,12 @@ void saveVideoThreadFunc(std::string time);
 // ----> Global variables
 std::mutex imuMutex;
 std::mutex imageMutex;
-std::string imuTsStr;
-std::string imuAccelStr;
-std::string imuGyroStr;
+// std::string imuTsStr;
+// std::string imuAccelStr;
+// std::string imuGyroStr;
 std::queue<cv::Mat> imageQueue;
 
-bool sensThreadStop=false;
+// bool sensThreadStop=false;
 bool videoThreadStop=false;
 bool saveThreadStop=false;
 uint64_t mcu_sync_ts=0;
@@ -150,29 +150,29 @@ int main(int argc, char *argv[])
     // <---- Create a Video Capture object
 
     // ----> Create a Sensors Capture object
-    sl_oc::sensors::SensorCapture sensCap(verbose);
-    if( !sensCap.initializeSensors(camSn) ) // Note: we use the serial number acquired by the VideoCapture object
-    {
-        std::cerr << "Cannot open sensors capture" << std::endl;
-        std::cerr << "Try to enable verbose to get more info" << std::endl;
+    // sl_oc::sensors::SensorCapture sensCap(verbose);
+    // if( !sensCap.initializeSensors(camSn) ) // Note: we use the serial number acquired by the VideoCapture object
+    // {
+    //     std::cerr << "Cannot open sensors capture" << std::endl;
+    //     std::cerr << "Try to enable verbose to get more info" << std::endl;
 
-        return EXIT_FAILURE;
-    }
-    std::cout << "Sensors Capture connected to camera sn: " << sensCap.getSerialNumber() << std::endl;
+    //     return EXIT_FAILURE;
+    // }
+    // std::cout << "Sensors Capture connected to camera sn: " << sensCap.getSerialNumber() << std::endl;
 
     // Start the sensor capture thread. Note: since sensor data can be retrieved at 400Hz and video data frequency is
     // minor (max 100Hz), we use a separated thread for sensors.
-    std::thread sensThread(getSensorThreadFunc,&sensCap);
+    // std::thread sensThread(getSensorThreadFunc,&sensCap);
     // <---- Create Sensors Capture
 
     // ----> Enable video/sensors synchronization
-    videoCap.enableSensorSync(&sensCap);
+    // videoCap.enableSensorSync(&sensCap);
     // <---- Enable video/sensors synchronization
 
 
     std::vector<std::thread> threads;
     threads.push_back(std::thread(getVideoThreadFunc, &videoCap, params.res));
-    threads.push_back(std::thread(getSensorThreadFunc, &sensCap));
+    // threads.push_back(std::thread(getSensorThreadFunc, &sensCap));
     threads.push_back(std::thread(saveVideoThreadFunc, time));
 
     //cv::namedWindow("Stream RGB", cv::WINDOW_AUTOSIZE);
@@ -211,57 +211,57 @@ int main(int argc, char *argv[])
     //return EXIT_SUCCESS;
 }
 
-// Sensor acquisition runs at 400Hz, so it must be executed in a different thread
-void getSensorThreadFunc(sl_oc::sensors::SensorCapture* sensCap)
-{
-    // Flag to stop the thread
-    sensThreadStop = false;
+// // Sensor acquisition runs at 400Hz, so it must be executed in a different thread
+// void getSensorThreadFunc(sl_oc::sensors::SensorCapture* sensCap)
+// {
+//     // Flag to stop the thread
+//     sensThreadStop = false;
 
-    // Previous IMU timestamp to calculate frequency
-    uint64_t last_imu_ts = 0;
+//     // Previous IMU timestamp to calculate frequency
+//     uint64_t last_imu_ts = 0;
 
-    // Infinite data grabbing loop
-    while(!sensThreadStop)
-    {
-        // ----> Get IMU data
-        const sl_oc::sensors::data::Imu imuData = sensCap->getLastIMUData(2000);
+//     // Infinite data grabbing loop
+//     while(!sensThreadStop)
+//     {
+//         // ----> Get IMU data
+//         const sl_oc::sensors::data::Imu imuData = sensCap->getLastIMUData(2000);
 
-        // Process data only if valid
-        if(imuData.valid == sl_oc::sensors::data::Imu::NEW_VAL ) // Uncomment to use only data syncronized with the video frames
-        {
-            // ----> Data info to be displayed
-            std::stringstream timestamp;
-            std::stringstream accel;
-            std::stringstream gyro;
+//         // Process data only if valid
+//         if(imuData.valid == sl_oc::sensors::data::Imu::NEW_VAL ) // Uncomment to use only data syncronized with the video frames
+//         {
+//             // ----> Data info to be displayed
+//             std::stringstream timestamp;
+//             std::stringstream accel;
+//             std::stringstream gyro;
 
-            timestamp << std::fixed << std::setprecision(9) << "IMU timestamp:   " << static_cast<double>(imuData.timestamp)/1e9<< " sec" ;
-            if(last_imu_ts!=0)
-                timestamp << std::fixed << std::setprecision(1)  << " [" << 1e9/static_cast<float>(imuData.timestamp-last_imu_ts) << " Hz]";
-            last_imu_ts = imuData.timestamp;
+//             timestamp << std::fixed << std::setprecision(9) << "IMU timestamp:   " << static_cast<double>(imuData.timestamp)/1e9<< " sec" ;
+//             if(last_imu_ts!=0)
+//                 timestamp << std::fixed << std::setprecision(1)  << " [" << 1e9/static_cast<float>(imuData.timestamp-last_imu_ts) << " Hz]";
+//             last_imu_ts = imuData.timestamp;
 
-            accel << std::fixed << std::showpos << std::setprecision(4) << " * Accel: " << imuData.aX << " " << imuData.aY << " " << imuData.aZ << " [m/s^2]";
-            gyro << std::fixed << std::showpos << std::setprecision(4) << " * Gyro: " << imuData.gX << " " << imuData.gY << " " << imuData.gZ << " [deg/s]";
-            // <---- Data info to be displayed
+//             accel << std::fixed << std::showpos << std::setprecision(4) << " * Accel: " << imuData.aX << " " << imuData.aY << " " << imuData.aZ << " [m/s^2]";
+//             gyro << std::fixed << std::showpos << std::setprecision(4) << " * Gyro: " << imuData.gX << " " << imuData.gY << " " << imuData.gZ << " [deg/s]";
+//             // <---- Data info to be displayed
 
-            // Mutex to not overwrite data while diplaying them
-            imuMutex.lock();
+//             // Mutex to not overwrite data while diplaying them
+//             imuMutex.lock();
 
-            imuTsStr = timestamp.str();
-            imuAccelStr = accel.str();
-            imuGyroStr = gyro.str();
+//             imuTsStr = timestamp.str();
+//             imuAccelStr = accel.str();
+//             imuGyroStr = gyro.str();
 
-            // ----> Timestamp of the synchronized data
-            if(imuData.sync)
-            {
-                mcu_sync_ts = imuData.timestamp;
-            }
-            // <---- Timestamp of the synchronized data
+//             // ----> Timestamp of the synchronized data
+//             if(imuData.sync)
+//             {
+//                 mcu_sync_ts = imuData.timestamp;
+//             }
+//             // <---- Timestamp of the synchronized data
 
-            imuMutex.unlock();
-        }
-        // <---- Get IMU data
-    }
-}
+//             imuMutex.unlock();
+//         }
+//         // <---- Get IMU data
+//     }
+// }
 
 
 void saveVideoThreadFunc(std::string time)
