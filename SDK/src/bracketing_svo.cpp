@@ -32,6 +32,8 @@ using namespace std;
 
 int idx_exposure = 0;
 std::array<int, 6> exposures {2, 4, 8, 16, 32, 64};
+std::string resolution = "HD720";
+int frame_rate = 30;
 
 int main(int argc, char **argv) {
 
@@ -45,8 +47,23 @@ int main(int argc, char **argv) {
 
     // Set configuration parameters for the ZED
     InitParameters init_parameters;
-    init_parameters.camera_resolution = RESOLUTION::HD720;
-    init_parameters.camera_fps = 30;
+    // *********** OG *********************************************
+    // SET RESOLUTION
+    if(resolution == "VGA") // 15, 30, 60 or 100 FPS
+    {
+        init_parameters.camera_resolution = RESOLUTION::VGA;
+    } else if(resolution == "HD720") // 15, 30 or 60 FPS
+    {
+        init_parameters.camera_resolution = RESOLUTION::HD720;
+    } else if (resolution == "HD1080") // 15 or 30 FPS
+    {
+        init_parameters.camera_resolution = RESOLUTION::HD1080;
+    } else if (resolution == "HD2K") // 15FPS
+    {
+        init_parameters.camera_resolution = RESOLUTION::HD2K;
+    }
+    // ********************************************************
+    init_parameters.camera_fps = frame_rate;
     init_parameters.depth_mode = DEPTH_MODE::NONE;
     parseArgs(argc,argv,init_parameters);
 
